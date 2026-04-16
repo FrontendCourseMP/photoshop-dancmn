@@ -1,121 +1,130 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import React, { useRef, useState } from 'react'; 
+import { decodeGB7, encodeGB7 } from './utils/gb7-codec';
+import './App.css';
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+interface ImageMeta {
+  width: number;
+  height: number;
+  depth: string;
 }
 
-export default App
+function App() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [meta, setMeta] = useState<ImageMeta | null>(null);
+  const [format, setFormat] = useState<string>(''); 
+
+  // Обработка загрузки файла
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    setFormat(ext || ''); // Сохраняем формат файла
+
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
+
+    if (ext === 'gb7') {
+      // Кастомный декодер для нашего формата
+      const buffer = await file.arrayBuffer();
+      try {
+        const { width, height, hasMask, imageData } = decodeGB7(buffer);
+        canvas.width = width;
+        canvas.height = height;
+        ctx.putImageData(imageData, 0, 0);
+        setMeta({ width, height, depth: hasMask ? '7-bit + 1-bit mask (GB7)' : '7-bit (GB7)' });
+      } catch (err) {
+        alert("Ошибка чтения GB7: " + err);
+      }
+    } else {
+      // Стандартный подход браузера для PNG и JPG
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+          setMeta({ width: img.width, height: img.height, depth: '24/32-bit (Standard)' });
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Обработка скачивания
+  const handleDownload = (outExt: string) => {
+    const canvas = canvasRef.current;
+    if (!canvas || !meta) return;
+
+    if (outExt === 'gb7') {
+      const ctx = canvas.getContext('2d')!;
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const buffer = encodeGB7(imageData, true); // Сохраняем с маской по умолчанию
+      
+      const blob = new Blob([buffer], { type: 'application/octet-stream' });
+      triggerDownload(blob, 'image.gb7');
+    } else {
+      canvas.toBlob((blob) => {
+        if (blob) triggerDownload(blob, `image.${outExt}`);
+      }, `image/${outExt}`);
+    }
+  };
+
+  const triggerDownload = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="app-container">
+      {/* Тулбар */}
+      <header className="toolbar">
+        <h1>Редактор изображений</h1>
+        <div className="actions">
+          <input 
+            type="file" 
+            accept=".png, .jpg, .jpeg, .gb7" 
+            ref={fileInputRef} 
+            onChange={handleFileUpload} 
+            hidden
+          />
+          <button onClick={() => fileInputRef.current?.click()}>Открыть</button>
+          <button onClick={() => handleDownload('png')} disabled={!meta}>Скачать PNG</button>
+          <button onClick={() => handleDownload('jpg')} disabled={!meta}>Скачать JPG</button>
+          <button onClick={() => handleDownload('gb7')} disabled={!meta}>Скачать GB7</button>
+        </div>
+      </header>
+
+      {/* Рабочая область (Холст) */}
+      <main className="canvas-wrapper">
+        <canvas ref={canvasRef} className="main-canvas" />
+      </main>
+
+      {/* Статус-бар */}
+      <footer className="status-bar">
+        {meta ? (
+          <>
+            {/* Вот здесь мы теперь используем переменную format! */}
+            <span>Формат: {format.toUpperCase()}</span> 
+            <span>Ширина: {meta.width}px</span>
+            <span>Высота: {meta.height}px</span>
+            <span>Глубина цвета: {meta.depth}</span>
+          </>
+        ) : (
+          <span>Изображение не загружено</span>
+        )}
+      </footer>
+    </div>
+  );
+}
+
+export default App;
