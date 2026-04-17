@@ -1,5 +1,6 @@
-import React, { useRef, useState } from 'react'; 
-import { decodeGB7, encodeGB7 } from './utils/gb7-codec';
+import React, { useRef, useState } from 'react';
+import { encodeGB7 } from './utils/gb7-codec';
+import { loadImageFromFile } from './utils/image-loader'; 
 import './App.css';
 
 interface ImageMeta {
@@ -13,50 +14,31 @@ function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [meta, setMeta] = useState<ImageMeta | null>(null);
-  const [format, setFormat] = useState<string>(''); 
+  const [format, setFormat] = useState<string>('');
 
-  // Обработка загрузки файла
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const ext = file.name.split('.').pop()?.toLowerCase();
-    setFormat(ext || ''); // Сохраняем формат файла
+    try {
+      const { imageData, width, height, depth, format } = await loadImageFromFile(file);
 
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!canvas || !ctx) return;
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext('2d');
+      if (!canvas || !ctx) return;
 
-    if (ext === 'gb7') {
-      // Кастомный декодер для нашего формата
-      const buffer = await file.arrayBuffer();
-      try {
-        const { width, height, hasMask, imageData } = decodeGB7(buffer);
-        canvas.width = width;
-        canvas.height = height;
-        ctx.putImageData(imageData, 0, 0);
-        setMeta({ width, height, depth: hasMask ? '7-bit + 1-bit mask (GB7)' : '7-bit (GB7)' });
-      } catch (err) {
-        alert("Ошибка чтения GB7: " + err);
-      }
-    } else {
-      // Стандартный подход браузера для PNG и JPG
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          canvas.width = img.width;
-          canvas.height = img.height;
-          ctx.drawImage(img, 0, 0);
-          setMeta({ width: img.width, height: img.height, depth: '24/32-bit (Standard)' });
-        };
-        img.src = e.target?.result as string;
-      };
-      reader.readAsDataURL(file);
+      canvas.width = width;
+      canvas.height = height;
+      ctx.putImageData(imageData, 0, 0);
+
+      setMeta({ width, height, depth });
+      setFormat(format);
+
+    } catch (error) {
+      alert(error); 
     }
   };
 
-  // Обработка скачивания
   const handleDownload = (outExt: string) => {
     const canvas = canvasRef.current;
     if (!canvas || !meta) return;
@@ -64,10 +46,27 @@ function App() {
     if (outExt === 'gb7') {
       const ctx = canvas.getContext('2d')!;
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const buffer = encodeGB7(imageData, true); // Сохраняем с маской по умолчанию
+      const buffer = encodeGB7(imageData, true);
       
       const blob = new Blob([buffer], { type: 'application/octet-stream' });
       triggerDownload(blob, 'image.gb7');
+
+    } else if (outExt === 'jpg') {
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = canvas.width;
+      tempCanvas.height = canvas.height;
+      const tCtx = tempCanvas.getContext('2d');
+      
+      if (tCtx) {
+        tCtx.fillStyle = '#ffffff';
+        tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        tCtx.drawImage(canvas, 0, 0);
+        
+        tempCanvas.toBlob((blob) => {
+          if (blob) triggerDownload(blob, 'image.jpg');
+        }, 'image/jpeg', 0.9);
+      }
+
     } else {
       canvas.toBlob((blob) => {
         if (blob) triggerDownload(blob, `image.${outExt}`);
@@ -99,12 +98,12 @@ function App() {
           />
           <button onClick={() => fileInputRef.current?.click()}>Открыть</button>
           <button onClick={() => handleDownload('png')} disabled={!meta}>Скачать PNG</button>
-          <button onClick={() => handleDownload('jpeg')} disabled={!meta}>Скачать JPG</button>
+          <button onClick={() => handleDownload('jpg')} disabled={!meta}>Скачать JPG</button>
           <button onClick={() => handleDownload('gb7')} disabled={!meta}>Скачать GB7</button>
         </div>
       </header>
 
-      {/* Рабочая область (Холст) */}
+      {/* Рабочая область */}
       <main className="canvas-wrapper">
         <canvas ref={canvasRef} className="main-canvas" />
       </main>
@@ -113,7 +112,6 @@ function App() {
       <footer className="status-bar">
         {meta ? (
           <>
-            {/* Вот здесь мы теперь используем переменную format! */}
             <span>Формат: {format.toUpperCase()}</span> 
             <span>Ширина: {meta.width}px</span>
             <span>Высота: {meta.height}px</span>
