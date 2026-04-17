@@ -71,7 +71,7 @@ function App() {
     } else {
       canvas.toBlob((blob) => {
         if (blob) triggerDownload(blob, `image.${outExt}`);
-      }, `image/${outExt}`);
+      }, `image/${outExt}`);  
     }
   };
 
@@ -99,7 +99,7 @@ function App() {
           />
           <button onClick={() => fileInputRef.current?.click()}>Открыть</button>
           <button onClick={() => handleDownload('png')} disabled={!meta}>Скачать PNG</button>
-          <button onClick={() => handleDownload('jpg')} disabled={!meta}>Скачать JPG</button>
+          <button onClick={() => handleDownload('jpeg')} disabled={!meta}>Скачать JPG</button>
           <button onClick={() => handleDownload('gb7')} disabled={!meta}>Скачать GB7</button>
         </div>
       </header>
