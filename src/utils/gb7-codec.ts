@@ -1,14 +1,9 @@
+import type { CoreImage } from "../types";
+
 const GB7_SIGNATURE = [0x47, 0x42, 0x37, 0x1D];
 const GB7_VERSION = 0x01;
 
-export interface GB7Image {
-    width: number;
-    height: number;
-    hasMask: boolean;
-    imageData: ImageData;
-}
-
-export function decodeGB7(buffer: ArrayBuffer): GB7Image {
+export function decodeGB7(buffer: ArrayBuffer): CoreImage {
     const view = new DataView(buffer);
     const bytes = new Uint8Array(buffer);
 

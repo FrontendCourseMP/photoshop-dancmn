@@ -1,14 +1,7 @@
 import { decodeGB7 } from './gb7-codec';
+import type { AppImage } from '../types';
 
-export interface LoadedImageInfo {
-  imageData: ImageData;
-  width: number;
-  height: number;
-  depth: string;
-  format: string;
-}
-
-export const loadImageFromFile = (file: File): Promise<LoadedImageInfo> => {
+export const loadImageFromFile = (file: File): Promise<AppImage> => {
   return new Promise((resolve, reject) => {
     const ext = file.name.split('.').pop()?.toLowerCase() || '';
 
@@ -21,6 +14,7 @@ export const loadImageFromFile = (file: File): Promise<LoadedImageInfo> => {
               imageData,
               width,
               height,
+              hasMask,
               depth: hasMask ? '7-bit + 1-bit mask (GB7)' : '7-bit (GB7)',
               format: ext
             });
@@ -61,6 +55,7 @@ export const loadImageFromFile = (file: File): Promise<LoadedImageInfo> => {
             imageData,
             width: img.width,
             height: img.height,
+            hasMask: hasAlpha,
             depth: hasAlpha ? '32-bit (RGBA)' : '24-bit (RGB)',
             format: ext
           });
