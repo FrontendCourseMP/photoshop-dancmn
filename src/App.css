@@ -1,66 +1,63 @@
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background-color: #1e1e1e;
-  color: #ccc;
-  height: 100vh;
-  overflow: hidden;
+  font-family: -apple-system, sans-serif;
+  background-color: #1e1e1e; color: #ccc;
+  height: 100vh; overflow: hidden;
 }
 
 .app-container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
+  display: flex; flex-direction: column; height: 100vh;
 }
 
 .toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 20px;
-  background-color: #333;
-  border-bottom: 1px solid #222;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 20px; background-color: #333; border-bottom: 1px solid #222;
 }
 
-.toolbar h1 {
-  font-size: 16px;
-  font-weight: 500;
-  color: #fff;
-}
+.toolbar h1 { font-size: 16px; color: #fff; }
 
 .actions button {
-  background-color: #444;
-  color: white;
-  border: 1px solid #555;
-  padding: 6px 12px;
-  margin-left: 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 13px;
+  background-color: #444; color: white; border: 1px solid #555;
+  padding: 6px 12px; margin-left: 8px; border-radius: 4px;
+  cursor: pointer; font-size: 13px;
+}
+.actions button:hover:not(:disabled) { background-color: #555; }
+.actions button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.divider { margin: 0 10px; color: #666; }
+
+.tool-btn.active {
+  background-color: #007acc; border-color: #005f9e; font-weight: bold;
 }
 
-.actions button:hover:not(:disabled) {
-  background-color: #555;
+.workspace {
+  flex: 1; display: flex; flex-direction: row; overflow: hidden;
 }
 
-.actions button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.side-panel {
+  width: 260px; background-color: #252526; border-right: 1px solid #333;
+  border-left: 1px solid #333; padding: 15px; overflow-y: auto;
 }
+.side-panel h3 { font-size: 14px; margin-bottom: 15px; color: #fff; text-transform: uppercase; letter-spacing: 1px; }
+.hint { font-size: 12px; color: #888; text-align: center; margin-top: 20px; }
+
+.channels-list { display: flex; flex-direction: column; gap: 15px; }
+.channel-item {
+  display: flex; flex-direction: column; align-items: center;
+  cursor: pointer; opacity: 0.4; transition: opacity 0.2s, transform 0.1s;
+}
+.channel-item:hover { opacity: 0.8; }
+.channel-item.active { opacity: 1; }
+.channel-item img {
+  width: 100%; border: 2px solid transparent; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+.channel-item.active img { border-color: #007acc; }
+.channel-item span { margin-top: 5px; font-size: 12px; color: #fff; }
 
 .canvas-wrapper {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-  overflow: hidden;
-  /* Шахматный фон для прозрачных изображений */
+  flex: 1; display: flex; justify-content: center; align-items: center;
+  padding: 20px; overflow: hidden;
   background-image: 
     linear-gradient(45deg, #2a2a2a 25%, transparent 25%), 
     linear-gradient(-45deg, #2a2a2a 25%, transparent 25%), 
@@ -71,19 +68,16 @@ body {
 }
 
 .main-canvas {
-  /* Важно для адаптивности: холст не будет вылезать за пределы окна */
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain; 
-  box-shadow: 0 0 10px rgba(0,0,0,0.5);
-  background-color: transparent;
+  max-width: 100%; max-height: 100%; object-fit: contain; 
+  box-shadow: 0 0 15px rgba(0,0,0,0.8);
 }
+.main-canvas.crosshair { cursor: crosshair; }
+
+.color-info p { font-size: 13px; margin: 8px 0; }
+.color-info ul { list-style: none; padding-left: 10px; font-size: 13px; color: #ccc; }
+.color-info hr { border: none; border-top: 1px solid #444; margin: 15px 0; }
+.color-preview { width: 100%; height: 50px; border-radius: 4px; border: 1px solid #555; margin-bottom: 15px; }
 
 .status-bar {
-  display: flex;
-  gap: 20px;
-  padding: 4px 20px;
-  background-color: #007acc;
-  color: #fff;
-  font-size: 12px;
+  display: flex; gap: 20px; padding: 4px 20px; background-color: #007acc; color: #fff; font-size: 12px;
 }
