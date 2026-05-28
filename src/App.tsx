@@ -6,6 +6,7 @@ import type { AppImage } from './types';
 import { rgbToLab } from './utils/color-math';
 import { buildThumbnails, applyActiveChannels, type ChannelThumb } from './utils/channel-builder';
 import './App.css';
+import { LevelsDialog } from './components/LevelsDialog';
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -17,6 +18,9 @@ function App() {
   
   const [eyedropperActive, setEyedropperActive] = useState(false);
   const [pickedColor, setPickedColor] = useState<any>(null);
+
+  const [levelsOpen, setLevelsOpen] = useState(false);
+  const [previewData, setPreviewData] = useState<ImageData | null>(null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -44,11 +48,12 @@ function App() {
     if (!imageInfo || !canvasRef.current) return;
     const isGray = imageInfo.format === 'gb7';
     
-    const newImageData = applyActiveChannels(imageInfo.imageData, activeChannels, isGray);
+    const baseData = previewData || imageInfo.imageData;
+    const newImageData = applyActiveChannels(baseData, activeChannels, isGray);
     
     const ctx = canvasRef.current.getContext('2d')!;
     ctx.putImageData(newImageData, 0, 0);
-  }, [activeChannels, imageInfo]);
+  }, [activeChannels, imageInfo, previewData]);
 
   const toggleChannel = (id: string) => {
     setActiveChannels(prev => {
@@ -167,6 +172,8 @@ function App() {
           >
             {eyedropperActive ? '🧪 Пипетка (ВКЛ)' : '🧪 Пипетка'}
           </button>
+
+          <button onClick={() => setLevelsOpen(true)} disabled={!imageInfo}>Уровни</button>
         </div>
       </header>
 
@@ -246,6 +253,20 @@ function App() {
           <span>Изображение не загружено</span>
         )}
       </footer>
+
+      <LevelsDialog 
+        isOpen={levelsOpen}
+        originalImage={imageInfo?.imageData || null}
+        onClose={() => setLevelsOpen(false)}
+        onPreview={(newData) => setPreviewData(newData)}
+        onApply={(newImage) => {
+          if (imageInfo) {
+            setImageInfo({ ...imageInfo, imageData: newImage });
+          }
+          setPreviewData(null);
+          setLevelsOpen(false);
+        }}
+      />
     </div>
   );
 }
