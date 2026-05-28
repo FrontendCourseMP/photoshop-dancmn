@@ -56,8 +56,11 @@ body {
 .channel-item span { margin-top: 5px; font-size: 12px; color: #fff; }
 
 .canvas-wrapper {
-  flex: 1; display: flex; justify-content: center; align-items: center;
-  padding: 20px; overflow: hidden;
+  flex: 1;
+  overflow: auto;
+  padding: 0; 
+  display: flex; 
+
   background-image: 
     linear-gradient(45deg, #2a2a2a 25%, transparent 25%), 
     linear-gradient(-45deg, #2a2a2a 25%, transparent 25%), 
@@ -67,11 +70,20 @@ body {
   background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
 }
 
+.canvas-container {
+  margin: auto;
+  padding: 50px;
+  display: inline-block;
+}
+
 .main-canvas {
-  max-width: 100%; max-height: 100%; object-fit: contain; 
+  display: block;
   box-shadow: 0 0 15px rgba(0,0,0,0.8);
 }
-.main-canvas.crosshair { cursor: crosshair; }
+
+.main-canvas.crosshair { 
+  cursor: crosshair; 
+}
 
 .color-info p { font-size: 13px; margin: 8px 0; }
 .color-info ul { list-style: none; padding-left: 10px; font-size: 13px; color: #ccc; }
@@ -163,3 +175,57 @@ body {
 .dialog-buttons button:hover { background: #666; }
 .dialog-buttons .btn-primary { background: #007acc; border-color: #005f9e;}
 .dialog-buttons .btn-primary:hover { background: #008be8; }
+
+/* --- ИЗМЕНЕНИЯ ДЛЯ ЗУМА ХОЛСТА --- */
+.canvas-wrapper {
+  flex: 1; 
+  display: flex; 
+  justify-content: center; 
+  align-items: center;
+  padding: 50px;
+  overflow: auto;
+  background-image: linear-gradient(45deg, #2a2a2a 25%, transparent 25%), linear-gradient(-45deg, #2a2a2a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #2a2a2a 75%), linear-gradient(-45deg, transparent 75%, #2a2a2a 75%);
+  background-size: 20px 20px;
+}
+
+.main-canvas {
+  box-shadow: 0 0 15px rgba(0,0,0,0.8);
+}
+
+.zoom-controls {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 10px;
+}
+.zoom-controls select { background: #005f9e; color: white; border: none; outline: none; border-radius: 3px; }
+
+/* --- МОДАЛЬНОЕ ОКНО RESIZE --- */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000;
+}
+.modal-content {
+  background: #323232; color: #ccc; padding: 20px; border-radius: 6px; width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border: 1px solid #555;
+}
+.modal-content h3 { margin: 0 0 15px 0; color: #fff; }
+.mp-info { font-size: 13px; margin-bottom: 15px; color: #aaa; }
+.mp-info strong { color: #fff; }
+
+.resize-controls label { display: block; margin-bottom: 15px; font-size: 13px; }
+.resize-controls select, .resize-controls input[type="number"] {
+  width: 100%; margin-top: 5px; padding: 5px; background: #222; border: 1px solid #444; color: white; border-radius: 3px;
+}
+.inputs-flex { display: flex; gap: 15px; }
+.checkbox-label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.checkbox-label input { width: auto; margin: 0; }
+.algo-label { margin-top: 15px; }
+.tooltip { font-size: 11px; color: #999; margin-top: -5px; line-height: 1.4; background: #252526; padding: 8px; border-radius: 4px;}
+
+.modal-footer {
+  display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; border-top: 1px solid #444; padding-top: 15px;
+}
+.modal-footer button {
+  background: #555; color: white; border: none; padding: 6px 15px; border-radius: 4px; cursor: pointer; font-size: 13px;
+}
+.modal-footer button:disabled { opacity: 0.5; cursor: not-allowed; }
+.modal-footer button:hover:not(:disabled) { background: #666; }
+.modal-footer .btn-primary { background: #007acc; }
